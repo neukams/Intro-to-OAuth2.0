@@ -12,6 +12,7 @@
         "@google-cloud/datastore": "^6.0.0",
         "axios": "^0.27.2",
         "body-parser": "^1.20.0",
+        "dotenv": "^16.0.0",
         "express": "^4.16.4",
         "node-json2html": "^2.2.2"
     }

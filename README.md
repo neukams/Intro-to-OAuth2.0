@@ -3,7 +3,7 @@
 ## Sources Cited
 
 Basic HTML Webpage
-https://xpertlab.com/wp-content/uploads/2021/07/java_foundation_oauth2_logo.png
+https://javascript.plainenglish.io/lets-build-a-website-login-page-with-html-css-javascript-and-an-external-api-a083942f797d
 
 OAuth Logo on Landing Page
 https://xpertlab.com/wp-content/uploads/2021/07/java_foundation_oauth2_logo.png

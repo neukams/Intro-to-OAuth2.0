@@ -4,19 +4,67 @@ const bodyParser = require('body-parser');
 const router = express.Router();
 const client_creds = require('./client_secret.apps.googleusercontent.com.json');
 const axios = require('axios');
+require('dotenv').config();
 
 app.enable('trust proxy');
 app.use(bodyParser.json());
-app.use(express.static('./'))
+app.use(express.static('./'));
 
-const redirect_uri = 'https://accounts.google.com/o/oauth2/v2/auth'
+const redirect = client_creds.web.auth_uri;
+const q = '?';
+const response_type = 'response_type:code';
+const ap = '&';
+const client_id = 'client_id=' + client_creds.web.client_id;
+const redirect_uri = 'redirect_uri=' + process.env.LOCAL_SPENCER || client_creds.web.redirect_uris[0];
+const scope = 'scope=profile';
+const state = randStateGenerator();
+
+const google_oauth = redirect + q + response_type + ap + client_id + ap + redirect_uri + ap + scope;
+var state_list = ['example_state_string'];
+
+//console.log(redirect_uri);
+//console.log(client_creds.web.redirect_uris[1]);
+//console.log(state);
+//console.log(google_oauth);
+//console.log(google_oauth + ap + 'state=' + state);
+
+/******************************
+ * Utils
+ ******************************/
+
+function randStateGenerator() {
+    return getRandString() + getRandString();
+}
+
+function getRandString() {
+    return (Math.random() + 1).toString(36).substring(2);
+}
+
+
+/******************************
+ * Route handlers
+ ******************************/
 
 router.get('/', async function(req, res) {
-    
-    // redirecting user to Google's oauth portal
-    res.sendFile('./index.html');
-    
+    console.log('GET /');
+    res.status(200).sendFile('./index.html');
 });
+
+router.get('/redirect_to_google_oauth', async function(req, res) {
+    var state = randStateGenerator();
+    state_list.push(state);
+    console.log(google_oauth + ap + 'state=' + state);
+    res.redirect(google_oauth + ap + 'state=' + state);
+});
+
+router.get('/oauth', async function(req, res) {
+    console.log('Received OAuth response from Google server or redirected user?');
+    console.log('TODO');
+});
+
+/*router.something ('/oath')
+
+*/
 
 
 /*******************************

@@ -3,9 +3,9 @@ const app = express();
 const bodyParser = require('body-parser');
 const router = express.Router();
 const client_creds = require('./client_secret.apps.googleusercontent.com.json');
-const axios = require('axios');
 require('dotenv').config();
 
+const oauth_supp = require('./oauth_support.cjs');
 app.enable('trust proxy');
 app.use(bodyParser.json());
 app.use(express.static('./'));
@@ -17,24 +17,10 @@ const ap = '&';
 const client_id = 'client_id=' + client_creds.web.client_id;
 const redirect_uri = 'redirect_uri=' + process.env.LOCAL_SPENCER || client_creds.web.redirect_uris[0];
 const scope = 'scope=profile';
-const state = randStateGenerator();
 
 const google_oauth = redirect + q + response_type + ap + client_id + ap + redirect_uri + ap + scope;
 var state_list = ['example_state_string'];
 
-// STARTUP VALIDATION
-//console.log(redirect_uri);
-//console.log(client_creds.web.redirect_uris[1]);
-//console.log(state);
-//console.log(google_oauth);
-//console.log(google_oauth + ap + 'state=' + state);
-//console.log('does the state function work?');
-//console.log(validState('example_state_string'));
-
-const headers = {
-    "Accept": "application/json",
-    "Content-Type": "application/json",
-}
 
 /******************************
  * Utils
@@ -51,6 +37,7 @@ function getRandString() {
 function validState(received_state) {
     for (i=0; i< state_list.length; i++) {
         if (state_list[i] == received_state) {
+            console.log('valid query state');
             return true;
         }
     }
@@ -68,7 +55,9 @@ router.get('/', async function(req, res) {
 
 router.post('/redirect_to_google_oauth', async function(req, res) {
     console.log('GET /redirect_to_google_oauth');
+    const state = randStateGenerator();
     const location = google_oauth + ap + 'state=' + state;
+    state_list.push(state);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.status(200).send({"url": location});
 });
@@ -77,77 +66,25 @@ router.get('/oauth', async function(req, res) {
     console.log('GET /oauth')
     console.log('Received response from Google server');
 
-    // Send POST to Google Server verifying State & Code
+    // if State matches what we generated for the user from GET /redirect_to_google_oauth
+    // Google Server responds with the information we requested.
     if (validState(req.query.state)) {
         
-        
-        var response = await fetch('<validate link in documentation>', {
-            method: 'POST',
-            headers: headers,
-            body: {
-                code: req.query.code,
-                client_id: client_creds.web.client_id,
-                client_secret: client_creds.web.client_secret,
-                redirect_uri: process.env.LOCAL_SPENCER || client_creds.web.redirect_uris[0],
-                grant_type: 'authorization_code'
-            }
-        });
-    
-        var res_json = await response.json();     
+        var response = await oauth_supp.post_to_google(client_creds, req.query.code);
+        console.log(response);
+        console.log('/-------------/n\n\n\n\n\n\n\n')
+        console.log(response.data.token_type);
+        console.log(response.data.access_token);
+
+        var user_data = await oauth_supp.get_data(response.data);
+        console.log('received user data?');
+        console.log(user_data.data.names);
+
+        var response = '<pre>Hello TA Tester person.<br/><br/><br/>Display Name:     ' + user_data.data.names[0].displayName + '<br><br>Family Name:      ' + user_data.data.names[0].familyName + '<br><br>givenName:        ' + user_data.data.names[0].givenName + '<br><br>state:            ' + req.query.state + '</pre>';
+        res.status(200).send(response);
+        return;
     }
 });
-
-/*router.something ('/oath')
-
-*/
-
-
-/*******************************
-    BOATS
-*******************************/
-
-/*
-
-router.post('/boats', async function(req, res) {
-    console.log('POST /boats');
-    return await req_handler.post_boat(req, res);
-});
-
-router.get('/boats/:id', async function(req, res) {
-    console.log('GET /boats/:id');
-    return await req_handler.get_boat(req, res);
-});
-
-router.patch('/boats/:id', async function(req, res) {
-    console.log('PATCH /boats/:id');
-    return await req_handler.patch_boat(req, res);
-});
-
-router.put('/boats/:id', async function(req, res) {
-    console.log('PUT /boats/:id');
-    return await req_handler.put_boat(req, res);
-});
-
-router.delete('/boats/:id', async function(req, res) {
-    console.log('DELETE /boats/:id');
-    return await req_handler.delete_boat(req, res);
-}); */
-
-/*******************************
-    Invalid Route Requests
-*******************************/
-
-/*
-router.put('/boats', async function(req, res) {
-    console.log('PUT /boats');
-    res.status(405).set('Allow', 'POST, GET').send({"Error": "Method Not Accepted"});
-});
-
-router.delete('/boats', async function(req, res) {
-    console.log('DELETE /boats');
-    res.status(405).set('Allow', 'POST, GET').send({"Error": "Method Not Accepted"});
-});
-*/
 
 
 app.use(router);

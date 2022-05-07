@@ -2,14 +2,29 @@
 //const axios = require('axios');
 //import axios from 'axios';
 
+console.log('am I getting the new file? v8');
+
+document.getElementById('oauth-form').addEventListener('submit', function(event){
+    event.preventDefault()
+    initiate_oauth();
+});
+
 async function initiate_oauth() {
     console.log('initiate_oauth()');
-    //const response = await axios();
-    //console.log(response.request.responseURL);
-    var req = XMLHttpRequest();
-    req.onreadystatechange = function() {
-        console.log('something');
+
+    const headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
     }
-    req.open('GET', '/redirect_to_google_oauth', true);
-    req.send();
+
+    var response = await fetch('http://localhost:8080/redirect_to_google_oauth', {
+        method: 'POST',
+        headers: headers,
+        mode: 'no-cors',
+        body: {}
+    });
+
+    var res_json = await response.json();
+    setTimeout(() => {console.log(res_json['url'])}, 5000);
+    window.location = res_json['url'];
 }

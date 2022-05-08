@@ -9,7 +9,7 @@ document.getElementById('oauth-form').addEventListener('submit', function(event)
     initiate_oauth();
 });
 
-async function initiate_oauth() {
+async function initiate_oauth(url) {
     console.log('initiate_oauth()');
 
     const headers = {
@@ -17,7 +17,7 @@ async function initiate_oauth() {
         "Content-Type": "application/json",
     }
 
-    var response = await fetch('http://localhost:8080/redirect_to_google_oauth', {
+    var response = await fetch('/redirect_to_google_oauth', {
         method: 'POST',
         headers: headers,
         mode: 'no-cors',

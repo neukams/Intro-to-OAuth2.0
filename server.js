@@ -4,11 +4,17 @@ const bodyParser = require('body-parser');
 const router = express.Router();
 const client_creds = require('./client_secret.apps.googleusercontent.com.json');
 require('dotenv').config();
+const d = require('./db');
+const utils = require('./utils');
 
 const oauth_supp = require('./oauth_support.cjs');
 app.enable('trust proxy');
 app.use(bodyParser.json());
 app.use(express.static('./'));
+
+app.engine('html', require('ejs').renderFile);
+app.set('view engine', 'html');
+app.set('views', __dirname);
 
 const redirect = client_creds.web.auth_uri;
 const q = '?';
@@ -35,11 +41,9 @@ function getRandString() {
 }
 
 function validState(received_state) {
-    for (i=0; i< state_list.length; i++) {
-        if (state_list[i] == received_state) {
-            console.log('valid query state');
-            return true;
-        }
+    var state = d.getState(received_state);
+    if (!utils.isEmpty(state)) {
+        return true;
     }
     return false;
 }
@@ -57,7 +61,7 @@ router.post('/redirect_to_google_oauth', async function(req, res) {
     console.log('GET /redirect_to_google_oauth');
     const state = randStateGenerator();
     const location = google_oauth + ap + 'state=' + state;
-    state_list.push(state);
+    d.createState(state);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.status(200).send({"url": location});
 });
@@ -71,7 +75,7 @@ router.get('/oauth', async function(req, res) {
     if (validState(req.query.state)) {
         
         var response = await oauth_supp.post_to_google(client_creds, req.query.code);
-        console.log(response);
+        //console.log(response);
         console.log('/-------------/n\n\n\n\n\n\n\n')
         console.log(response.data.token_type);
         console.log(response.data.access_token);
@@ -81,8 +85,13 @@ router.get('/oauth', async function(req, res) {
         console.log(user_data.data.names);
 
         var response = '<pre>Hello TA Tester person.<br/><br/><br/>Display Name:     ' + user_data.data.names[0].displayName + '<br><br>Family Name:      ' + user_data.data.names[0].familyName + '<br><br>givenName:        ' + user_data.data.names[0].givenName + '<br><br>state:            ' + req.query.state + '</pre>';
-        res.status(200).send(response);
-        return;
+        d.deleteResource('State', req.query.state);
+        res.render('./public/html/user_info.html', {
+            dname: user_data.data.names[0].displayName,
+            lname: user_data.data.names[0].familyName,
+            fname: user_data.data.names[0].givenName,
+            state: req.query.state
+        });
     }
 });
 

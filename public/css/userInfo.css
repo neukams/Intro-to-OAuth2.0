@@ -1,0 +1,13 @@
+body {
+  padding-top: 5rem;
+  background-color: #f5f5f5;
+}
+
+.oauth-box {
+  max-width: 25rem;
+  margin: auto;
+}
+
+.h4 {
+  color: red;
+}
